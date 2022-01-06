@@ -1,0 +1,218 @@
+import csv
+import datetime
+from zoneinfo import ZoneInfo
+import matplotlib.pyplot as plt
+from itertools import islice
+
+
+def take(n, iterable):
+    "Return first n items of the iterable as a list"
+    return list(islice(iterable, n))
+
+
+def time_to_datetime(input_time: str) -> datetime.datetime:
+    input_time = input_time.replace("+00:00", "")
+
+    input_time += ("." + ("0" * (25 - len(input_time)))) * (len(input_time) < 26)
+
+    new_time = datetime.datetime.strptime(input_time, "%Y-%m-%d %H:%M:%S.%f")
+
+    # says that the new time is utc
+    new_time = new_time.replace(tzinfo=datetime.timezone.utc)
+
+    # converts teh new time to est
+    new_time = new_time.astimezone(ZoneInfo("EST"))
+
+    return new_time
+
+
+def general_heat_map(input_list: list, heat_map_length: int, index_calculation, addition_calculation) -> list:
+    # creates a empty array of integers, each index is a unit of time
+    heat_map = [0] * heat_map_length
+
+    for input_line in input_list:
+        index_to_add_to = index_calculation(input_line)
+
+        heat_map[index_to_add_to] += addition_calculation(input_line)
+
+    return heat_map
+
+
+def show_graph(person_1_heat_map, person_2_heat_map, total_heat_map, x_increment, x_labels, graph_title):
+    fig = plt.figure()
+    ax = fig.add_axes([0.1, 0.1, 0.8, 0.8])
+    total_x_ticks = max([len(person_1_heat_map), len(person_2_heat_map)])
+    max_y_value = max(total_heat_map)
+
+    ax.plot(range(total_x_ticks), person_1_heat_map, "r.-", label=person_1_name)
+    ax.plot(range(total_x_ticks), person_2_heat_map, "g.-", label=person_2_name)
+    ax.plot(range(total_x_ticks), total_heat_map, "b.-", label="Total")
+
+    ax.set_xticks(range(0, total_x_ticks, x_increment))
+    ax.set_yticks(range(0, max_y_value, max_y_value // 10))
+    ax.set_xticklabels(x_labels)
+
+    ax.set_title(graph_title)
+
+    plt.legend()
+    plt.show()
+
+
+def heatmap_graph(x_counter, y_counter) -> None:
+    if x_counter == "day":
+        total_indexes = 24 * 60
+        time_calc = lambda x: int(x[0].strftime("%H")) * 60 + int(x[0].strftime("%M"))
+        labels = [f"{_}:00" for _ in range(24)]
+        increment = 60
+    elif x_counter == "week":
+        total_indexes = 7
+        time_calc = lambda x: int(x[0].strftime("%w"))
+        labels = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+        increment = 1
+    elif x_counter == "year":
+        total_indexes = 12
+        time_calc = lambda x: int(x[0].strftime("%m")) - 1
+        labels = ["January", "February", "March", "April", "May", "June", "July",
+                  "August", "September", "October", "November", "December"]
+        increment = 1
+    else:
+        return print("invalid argument")
+
+    if y_counter == "texts":
+        addition_calc = lambda x: 1
+    elif y_counter == "words":
+        addition_calc = lambda x: len(x[1].split(" "))
+    elif y_counter == "chars":
+        addition_calc = lambda x: len(x[1])
+    elif y_counter == "pics":
+        addition_calc = lambda x: int("https" in x[-1])
+    else:
+        return print("invalid argument")
+
+    title = f"{y_counter} over the {x_counter}"
+
+    person_1_heat_map = general_heat_map(person_1_list, total_indexes, time_calc, addition_calc)
+    person_2_heat_map = general_heat_map(person_2_list, total_indexes, time_calc, addition_calc)
+    total_heat_map = list(map(sum, zip(person_1_heat_map, person_2_heat_map)))
+
+    show_graph(person_1_heat_map, person_2_heat_map, total_heat_map, increment, labels, title)
+
+
+def count_common_words(input_lines):
+    words = {}
+    for input_line in input_lines:
+        for word in map(lambda x: x.lower(), input_line[1].split(" ")):
+            if word in words.keys():
+                words[word] += 1
+            else:
+                words[word] = 1
+
+    words = {k: v for k, v in sorted(words.items(), key=lambda item: item[1], reverse=True)}
+    # for _, count in zip(range(10), words.items()):
+    #     print(count)
+
+    fig = plt.figure()
+
+    ax = fig.add_axes([0.1, 0.1, 0.8, 0.8])
+    common_words = take(100, words.keys())
+    word_count = take(100, words.values())
+    plt.setp(ax.get_xticklabels(), fontsize=10, rotation=30)
+    ax.bar(common_words, word_count)
+    plt.show()
+
+
+def longest_text(input_lines: list, number: int):
+    longest = sorted(input_lines, key=lambda x: len(x[1]), reverse=True)[:number]
+
+    [print(long[1]) for long in longest]
+
+
+def longest_time_without_texting(input_lines: list):
+    longest = 0
+
+    for x in range(len(input_lines) - 1):
+        difference = input_lines[x + 1][0] - input_lines[x][0]
+        if difference.total_seconds() > longest:
+            longest = difference.total_seconds()
+            print(input_lines[x][1], input_lines[x][0])
+
+    print(f"longest time without texting {longest / 60} minutes")
+
+
+def longest_convo(input_lines: list, max_distance):
+    time_pairs = []
+    # current_start_time
+    longest = 0
+    current_time = 0
+    current_index = 0
+
+    while current_index < len(input_lines) - 1:
+        current_start_time = input_lines[current_index][0]
+
+        while (input_lines[current_index + 1][0] - input_lines[current_index][0]).total_seconds() < max_distance:
+            current_index += 1
+            if current_index > len(input_lines) - 2:
+                if (input_lines[current_index][0] - current_start_time).total_seconds() > longest:
+                    print(current_start_time)
+                    longest = (input_lines[current_index][0] - current_start_time).total_seconds()
+                break
+
+        if (input_lines[current_index][0] - current_start_time).total_seconds() > longest:
+            print(current_start_time)
+            longest = (input_lines[current_index][0] - current_start_time).total_seconds()
+
+        current_index += 1
+
+    print(f"longest convo was {longest / 60} minutes")
+
+
+def who_texts_first(input_lines: list):
+    last_day = input_lines[0][0].strftime("%d")
+    last_month = input_lines[0][0].strftime("%m")
+    last_year = input_lines[0][0].strftime("%Y")
+    times_person_1_texted_first = int(input_lines[0][-1] == person_1_name)
+    times_person_2_texted_first = int(input_lines[0][-1] == person_2_name)
+
+    for input_line in input_lines[1:]:
+        current_day = input_line[0].strftime("%d")
+        current_month = input_line[0].strftime("%m")
+        current_year = input_line[0].strftime("%Y")
+
+        if last_day != current_day or current_month != last_month or current_year != last_year:
+            last_day = current_day
+            last_month = current_month
+            last_year = current_year
+
+            if input_line[-1] == person_2_name:
+                times_person_2_texted_first += 1
+            else:
+                times_person_1_texted_first += 1
+
+    print(f"Amount of times {person_2_name} texts first: {times_person_2_texted_first}\n"
+          f"Amount of times {person_1_name} texts first: {times_person_1_texted_first}")
+
+
+with open("person1.csv", "r", encoding="utf-8") as person_1_file, \
+        open("person2.csv", "r", encoding="utf-8") as person_2_file:
+   
+    person_1_name = ""
+    person_2_name = ""
+
+    person_1_list = list(csv.reader(person_1_file))[1:]
+    person_2_list = list(csv.reader(person_2_file))[1:]
+    # input(ZoneInfo.key)
+
+    for x in range(len(person_1_list)):
+        person_1_list[x][1] = time_to_datetime(person_1_list[x][1])
+        person_1_list[x] = person_1_list[x][1:] + [person_1_name]
+
+    for x in range(len(person_2_list)):
+        person_2_list[x][1] = time_to_datetime(person_2_list[x][1])
+        person_2_list[x] = person_2_list[x][1:] + [person_2_name]
+
+    new = sorted(person_1_list + person_2_list, key=lambda x: str(x[0]))
+
+    for x in ["day", "week", "year"]:
+        for y in ["texts", "chars", "words"]:
+            heatmap_graph(x, y)
+    
