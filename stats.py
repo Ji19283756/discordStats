@@ -178,10 +178,15 @@ def who_texts_first(input_lines: list):
           f"Amount of times {person_1_name} texts first: {times_person_1_texted_first}")
 
 
-def create_df(path1, path2):
-    # Read the JSON files into DataFrames
+# takes in the file paths and names of participants
+# generates a pandas df that is ordered by time
+def create_df(path1: str, path2: str, name1: str, name2: str) -> pd.DataFrame:
+    # Read the JSON files into DataFrames and add names of each person
     df1 = pd.read_json(path1)
+    df1["name"] = name1
+
     df2 = pd.read_json(path2)
+    df2["name"] = name2
 
     # Combine the two DataFrames
     combined_df = pd.concat([df1, df2], ignore_index=True)
@@ -197,6 +202,7 @@ def create_df(path1, path2):
 
 person1_file_path = "messages/person1.json"
 person2_file_path = "messages/person2.json"
+person1_name = "person1"
+person2_name = "person2"
 
-
-print(create_df(person1_file_path, person2_file_path))
+print(create_df(person1_file_path, person2_file_path, person1_name, person2_name))
