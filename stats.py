@@ -6,25 +6,10 @@ from itertools import islice
 import json
 import pandas as pd
 
+
 def take(n, iterable):
     "Return first n items of the iterable as a list"
     return list(islice(iterable, n))
-
-
-def time_to_datetime(input_time: str) -> datetime.datetime:
-    input_time = input_time.replace("+00:00", "")
-
-    input_time += ("." + ("0" * (25 - len(input_time)))) * (len(input_time) < 26)
-
-    new_time = datetime.datetime.strptime(input_time, "%Y-%m-%d %H:%M:%S.%f")
-
-    # says that the new time is utc
-    new_time = new_time.replace(tzinfo=datetime.timezone.utc)
-
-    # converts teh new time to est
-    new_time = new_time.astimezone(ZoneInfo("EST"))
-
-    return new_time
 
 
 def general_heat_map(input_list: list, heat_map_length: int, index_calculation, addition_calculation) -> list:
