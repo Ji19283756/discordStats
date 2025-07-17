@@ -3,7 +3,8 @@ import datetime
 from zoneinfo import ZoneInfo
 import matplotlib.pyplot as plt
 from itertools import islice
-
+import json
+import pandas as pd
 
 def take(n, iterable):
     "Return first n items of the iterable as a list"
@@ -192,27 +193,50 @@ def who_texts_first(input_lines: list):
           f"Amount of times {person_1_name} texts first: {times_person_1_texted_first}")
 
 
-with open("person1.csv", "r", encoding="utf-8") as person_1_file, \
-        open("person2.csv", "r", encoding="utf-8") as person_2_file:
-   
-    person_1_name = ""
-    person_2_name = ""
+def create_df(path1, path2):
+    # Read the JSON files into DataFrames
+    df1 = pd.read_json(path1)
+    df2 = pd.read_json(path2)
 
-    person_1_list = list(csv.reader(person_1_file))[1:]
-    person_2_list = list(csv.reader(person_2_file))[1:]
-    # input(ZoneInfo.key)
+    # Combine the two DataFrames
+    combined_df = pd.concat([df1, df2], ignore_index=True)
 
-    for x in range(len(person_1_list)):
-        person_1_list[x][1] = time_to_datetime(person_1_list[x][1])
-        person_1_list[x] = person_1_list[x][1:] + [person_1_name]
+    # Convert the 'timestamp' column to datetime for proper sorting
+    combined_df['Timestamp'] = pd.to_datetime(combined_df['Timestamp'], )
 
-    for x in range(len(person_2_list)):
-        person_2_list[x][1] = time_to_datetime(person_2_list[x][1])
-        person_2_list[x] = person_2_list[x][1:] + [person_2_name]
+    # Sort the DataFrame by the 'timestamp' column
+    combined_df = combined_df.sort_values(by='Timestamp').reset_index(drop=True)
 
-    new = sorted(person_1_list + person_2_list, key=lambda x: str(x[0]))
+    return combined_df
 
-    for x in ["day", "week", "year"]:
-        for y in ["texts", "chars", "words"]:
-            heatmap_graph(x, y)
-    
+
+person1_file_path = "messages/person1.json"
+person2_file_path = "messages/person2.json"
+
+
+print(create_df(person1_file_path, person2_file_path))
+
+# with open(person1_file_path, "r", encoding="utf-8") as person_1_file, \
+#         open(person2_file_path, "r", encoding="utf-8") as person_2_file:
+#
+#     person_1_name = ""
+#     person_2_name = ""
+#
+#     person_1_list = list(csv.reader(person_1_file))[1:]
+#     person_2_list = list(csv.reader(person_2_file))[1:]
+#     # input(ZoneInfo.key)
+#
+#     for x in range(len(person_1_list)):
+#         person_1_list[x][1] = time_to_datetime(person_1_list[x][1])
+#         person_1_list[x] = person_1_list[x][1:] + [person_1_name]
+#
+#     for x in range(len(person_2_list)):
+#         person_2_list[x][1] = time_to_datetime(person_2_list[x][1])
+#         person_2_list[x] = person_2_list[x][1:] + [person_2_name]
+#
+#     new = sorted(person_1_list + person_2_list, key=lambda x: str(x[0]))
+#
+#     for x in ["day", "week", "year"]:
+#         for y in ["texts", "chars", "words"]:
+#             heatmap_graph(x, y)
+#
