@@ -215,28 +215,3 @@ person2_file_path = "messages/person2.json"
 
 
 print(create_df(person1_file_path, person2_file_path))
-
-# with open(person1_file_path, "r", encoding="utf-8") as person_1_file, \
-#         open(person2_file_path, "r", encoding="utf-8") as person_2_file:
-#
-#     person_1_name = ""
-#     person_2_name = ""
-#
-#     person_1_list = list(csv.reader(person_1_file))[1:]
-#     person_2_list = list(csv.reader(person_2_file))[1:]
-#     # input(ZoneInfo.key)
-#
-#     for x in range(len(person_1_list)):
-#         person_1_list[x][1] = time_to_datetime(person_1_list[x][1])
-#         person_1_list[x] = person_1_list[x][1:] + [person_1_name]
-#
-#     for x in range(len(person_2_list)):
-#         person_2_list[x][1] = time_to_datetime(person_2_list[x][1])
-#         person_2_list[x] = person_2_list[x][1:] + [person_2_name]
-#
-#     new = sorted(person_1_list + person_2_list, key=lambda x: str(x[0]))
-#
-#     for x in ["day", "week", "year"]:
-#         for y in ["texts", "chars", "words"]:
-#             heatmap_graph(x, y)
-#
